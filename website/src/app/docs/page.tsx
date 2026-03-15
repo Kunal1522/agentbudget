@@ -1,8 +1,6 @@
-"use client";
-
 import { Nav } from "@/components/nav";
 import { CodeBlock } from "@/components/code-block";
-import { useState } from "react";
+import { DocsMobileNav } from "@/components/docs-mobile-nav";
 
 const sidebarSections = [
   {
@@ -51,7 +49,6 @@ const sidebarSections = [
 ];
 
 export default function DocsPage() {
-  const [mobileNav, setMobileNav] = useState(false);
 
   return (
     <div className="min-h-screen bg-noise">
@@ -77,39 +74,7 @@ export default function DocsPage() {
           ))}
         </aside>
 
-        {/* Mobile nav toggle */}
-        <button
-          className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center border border-border bg-surface text-muted-foreground md:hidden"
-          onClick={() => setMobileNav(!mobileNav)}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
-        {mobileNav && (
-          <div className="fixed inset-0 z-40 bg-background/90 backdrop-blur-sm md:hidden" onClick={() => setMobileNav(false)}>
-            <div className="mt-14 w-[260px] border-r border-border bg-background p-6" onClick={(e) => e.stopPropagation()}>
-              {sidebarSections.map((section) => (
-                <div key={section.title} className="mb-5">
-                  <h4 className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-muted">
-                    {section.title}
-                  </h4>
-                  {section.items.map((item) => (
-                    <a
-                      key={item.id}
-                      href={`#${item.id}`}
-                      className="block py-1.5 text-[13px] text-muted-foreground hover:text-foreground"
-                      onClick={() => setMobileNav(false)}
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <DocsMobileNav />
 
         {/* Content */}
         <main className="min-w-0 flex-1 border-r border-border px-8 py-12 md:px-12">

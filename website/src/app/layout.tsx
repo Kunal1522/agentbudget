@@ -22,6 +22,8 @@ export const metadata: Metadata = {
     "Open-source Python SDK that puts a hard dollar limit on any AI agent session. One line to set a budget. Zero infrastructure to manage.",
   metadataBase: new URL("https://agentbudget.dev"),
   keywords: [
+    "agentbudget",
+    "AgentBudget",
     "AI agent budget",
     "LLM cost tracking",
     "AI cost control",
@@ -34,6 +36,8 @@ export const metadata: Metadata = {
     "anthropic budget",
     "runaway agent prevention",
     "AI agent loop detection",
+    "pip install agentbudget",
+    "AI agent cost tracking Python",
   ],
   authors: [{ name: "Sahil Jagtap" }],
   creator: "Sahil Jagtap",
@@ -82,6 +86,53 @@ const jsonLd = {
   codeRepository: "https://github.com/sahiljagtap08/agentbudget",
 };
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What is AgentBudget?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "AgentBudget is an open-source Python SDK that enforces real-time cost limits on AI agent sessions. With one line of code — agentbudget.init('$5.00') — you set a hard dollar cap on any agent using OpenAI, Anthropic, or Gemini. When the budget is hit, the agent stops automatically.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How do I install AgentBudget?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Install AgentBudget via pip: pip install agentbudget. It requires Python 3.9+ and has no external dependencies.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What AI models does AgentBudget support?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "AgentBudget supports 60+ models including all OpenAI models (GPT-4o, GPT-4.1, o1, o3, o4-mini), all Anthropic Claude models (Opus, Sonnet, Haiku), Google Gemini (1.5, 2.0, 2.5), Mistral, and Cohere. Custom model pricing can be registered at runtime.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does AgentBudget stop runaway AI agents?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "AgentBudget uses three layers of protection: a hard dollar limit that raises BudgetExhausted when reached, a soft limit callback at 90% to allow graceful shutdown, and a circuit breaker that detects repeated API calls in a loop and raises LoopDetected before the budget is drained.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does AgentBudget work with LangChain and CrewAI?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. AgentBudget has native integrations for LangChain via LangChainBudgetCallback and CrewAI via CrewAIBudgetMiddleware. Install with pip install agentbudget[langchain].",
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -93,6 +144,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       </head>
       <body

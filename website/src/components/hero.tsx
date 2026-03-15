@@ -31,7 +31,7 @@ export function Hero() {
 
         {/* Heading */}
         <h1 className="mb-6 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-6xl lg:text-[68px]">
-          <span className="text-gradient-hero-animated">REAL-TIME</span>
+          <span className="text-gradient-hero-animated">AGENTBUDGET</span>
           <br />
           <span className="text-gradient-hero-animated" style={{ animationDelay: "-1.5s" }}>
             COST ENFORCEMENT
