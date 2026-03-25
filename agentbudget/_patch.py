@@ -149,6 +149,15 @@ class _OpenAIStreamWrapper:
             except Exception:
                 pass
 
+    def close(self) -> None:
+        """Close the underlying stream (matches Stream.close() interface)."""
+        close = getattr(self._stream, "close", None)
+        if close is not None:
+            try:
+                close()
+            except Exception:
+                pass
+
 
 class _AsyncOpenAIStreamWrapper:
     """Wraps an async OpenAI ``AsyncStream`` with full async iterator and
@@ -167,13 +176,6 @@ class _AsyncOpenAIStreamWrapper:
     def __init__(self, stream: Any, get_session: Callable) -> None:
         self._stream = stream
         self._get_session = get_session
-
-    def __aiter__(self) -> "_AsyncOpenAIStreamWrapper":
-        return self
-
-    async def __anext__(self) -> Any:
-        # Delegate to the underlying async iterator
-        raise StopAsyncIteration  # overridden by __aiter__ + _iterate below
 
     async def _iterate(self) -> AsyncIterator:
         model: Optional[str] = None
@@ -281,6 +283,15 @@ class _AnthropicStreamWrapper:
         return self
 
     def __exit__(self, *args: Any) -> None:
+        close = getattr(self._stream, "close", None)
+        if close is not None:
+            try:
+                close()
+            except Exception:
+                pass
+
+    def close(self) -> None:
+        """Close the underlying stream (matches Stream.close() interface)."""
         close = getattr(self._stream, "close", None)
         if close is not None:
             try:

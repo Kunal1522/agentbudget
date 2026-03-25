@@ -329,6 +329,48 @@ def test_anthropic_stream_supports_context_manager():
 
 
 # ---------------------------------------------------------------------------
+# close() interface tests
+# ---------------------------------------------------------------------------
+
+def test_openai_stream_wrapper_has_close():
+    """_OpenAIStreamWrapper exposes close() matching Stream interface."""
+    budget = AgentBudget(max_spend="$5.00")
+    with budget.session() as session:
+        close_called = []
+
+        class FakeStreamWithClose:
+            def __iter__(self):
+                return iter([])
+            def close(self):
+                close_called.append(True)
+
+        wrapped = _wrap_openai_stream(FakeStreamWithClose(), lambda: session)
+        assert hasattr(wrapped, "close")
+        wrapped.close()
+
+    assert close_called == [True]
+
+
+def test_anthropic_stream_wrapper_has_close():
+    """_AnthropicStreamWrapper exposes close() matching Stream interface."""
+    budget = AgentBudget(max_spend="$5.00")
+    with budget.session() as session:
+        close_called = []
+
+        class FakeStreamWithClose:
+            def __iter__(self):
+                return iter([])
+            def close(self):
+                close_called.append(True)
+
+        wrapped = _wrap_anthropic_stream(FakeStreamWithClose(), lambda: session)
+        assert hasattr(wrapped, "close")
+        wrapped.close()
+
+    assert close_called == [True]
+
+
+# ---------------------------------------------------------------------------
 # Drop-in mode integration test
 # ---------------------------------------------------------------------------
 
