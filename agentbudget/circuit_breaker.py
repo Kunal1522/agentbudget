@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from collections import defaultdict
 from dataclasses import dataclass
@@ -52,19 +53,22 @@ class CircuitBreaker:
         self._soft_limit_fraction = soft_limit_fraction
         self._loop_detector = LoopDetector(loop_config)
         self._soft_limit_triggered = False
+        self._lock = threading.Lock()
 
     @property
     def soft_limit_triggered(self) -> bool:
-        return self._soft_limit_triggered
+        with self._lock:
+            return self._soft_limit_triggered
 
     def check_budget(self, spent: float, budget: float) -> Optional[str]:
         """Check budget thresholds. Returns warning message or None."""
         if budget <= 0:
             return None
         fraction = spent / budget
-        if fraction >= self._soft_limit_fraction and not self._soft_limit_triggered:
-            self._soft_limit_triggered = True
-            return f"Soft limit reached: {fraction:.0%} of budget used (${spent:.4f} / ${budget:.2f})"
+        with self._lock:
+            if fraction >= self._soft_limit_fraction and not self._soft_limit_triggered:
+                self._soft_limit_triggered = True
+                return f"Soft limit reached: {fraction:.0%} of budget used (${spent:.4f} / ${budget:.2f})"
         return None
 
     def check_loop(self, key: str) -> bool:
