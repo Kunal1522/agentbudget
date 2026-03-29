@@ -37,3 +37,7 @@ htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Private planning docs — never commit
+PLAN.md
+_private/
