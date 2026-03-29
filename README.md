@@ -11,6 +11,17 @@
 
 ---
 
+## What's New in v0.3.0 — Streaming cost tracking, per-client API, and finalization reserve
+
+- **Streaming support** — `stream=True` calls fully tracked for OpenAI and Anthropic (sync + async). Requires `stream_options={"include_usage": True}` for OpenAI.
+- **`agentbudget.wrap_client(client, session)`** — explicit per-client tracking, no global patching required.
+- **`finalization_reserve`** — reserve a fraction of budget for the final response step so agents aren't cut off mid-task.
+- **`session.would_exceed(cost)`** — pre-flight budget check before expensive calls.
+- **OpenRouter support** — model names like `"openai/gpt-4o"` now resolve correctly.
+- **4 bug fixes** from community contributors (thread safety, off-by-one, exception handling, price validation).
+
+---
+
 ## What is AgentBudget?
 
 AgentBudget is an open-source Python SDK that puts a hard dollar limit on any AI agent session. It wraps LLM calls, tool calls, and external API requests with real-time cost tracking and automatic circuit breaking — so your agent can never silently burn through your budget.
