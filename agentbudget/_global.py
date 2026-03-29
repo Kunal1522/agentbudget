@@ -21,7 +21,7 @@ from typing import Any, Callable, Optional
 
 from .budget import AgentBudget
 from .session import BudgetSession
-from ._patch import patch_openai, patch_anthropic, unpatch_all
+from ._patch import patch_openai, patch_anthropic, unpatch_all, wrap_client
 
 _current_budget: Optional[AgentBudget] = None
 _current_session: Optional[BudgetSession] = None

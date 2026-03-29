@@ -142,6 +142,7 @@ def get_model_pricing(model: str) -> Optional[tuple[float, float]]:
     1. Custom pricing (registered via register_model)
     2. Built-in pricing table
     3. Fuzzy match (strip date suffixes to find base model)
+    4. Retry steps 1-3 after stripping OpenRouter-style "provider/model" prefix
 
     Returns (input_price_per_token, output_price_per_token) or None if unknown.
     """
@@ -152,7 +153,18 @@ def get_model_pricing(model: str) -> Optional[tuple[float, float]]:
     if model in MODEL_PRICING:
         return MODEL_PRICING[model]
     # 3. Fuzzy match dated variants
-    return _fuzzy_match(model)
+    result = _fuzzy_match(model)
+    if result is not None:
+        return result
+    # 4. Strip OpenRouter-style "provider/model" prefix and retry
+    if "/" in model:
+        bare = model.split("/", 1)[1]
+        if bare in _custom_pricing:
+            return _custom_pricing[bare]
+        if bare in MODEL_PRICING:
+            return MODEL_PRICING[bare]
+        return _fuzzy_match(bare)
+    return None
 
 
 def calculate_llm_cost(

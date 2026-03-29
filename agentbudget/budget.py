@@ -70,8 +70,26 @@ class AgentBudget:
         on_hard_limit: Optional[Callable] = None,
         on_loop_detected: Optional[Callable] = None,
         webhook_url: Optional[str] = None,
+        finalization_reserve: float = 0.0,
     ):
-        self._budget = parse_budget(max_spend)
+        """
+        Args:
+            finalization_reserve: Fraction of budget (0.0–1.0) to hold back from
+                normal enforcement and reserve for a final completion step.
+                For example, ``finalization_reserve=0.05`` on a $1.00 budget sets
+                the hard limit at $0.95, leaving $0.05 for the agent to finish
+                its last response without being cut off mid-task.
+
+                Use ``session.would_exceed(cost)`` to check the reserve budget
+                before issuing that final call.
+        """
+        if not (0.0 <= finalization_reserve < 1.0):
+            raise ValueError(
+                f"finalization_reserve must be in [0.0, 1.0), got {finalization_reserve}"
+            )
+        raw_budget = parse_budget(max_spend)
+        self._budget = raw_budget * (1.0 - finalization_reserve)
+        self._reserve_budget = raw_budget
         self._soft_limit = soft_limit
         self._loop_config = LoopDetectorConfig(
             max_repeated_calls=max_repeated_calls,
@@ -91,7 +109,8 @@ class AgentBudget:
 
     @property
     def max_spend(self) -> float:
-        return self._budget
+        """The total budget including any finalization reserve."""
+        return self._reserve_budget
 
     def session(self, session_id: Optional[str] = None) -> BudgetSession:
         """Create a new budget session."""

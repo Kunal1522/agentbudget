@@ -121,6 +121,71 @@ def patch_anthropic(get_session: Callable) -> bool:
     return True
 
 
+def wrap_client(client: Any, session: Any) -> Any:
+    """Attach a specific session to a specific client instance.
+
+    Unlike ``agentbudget.init()`` which patches globally, this wraps a single
+    client object so only calls on that instance are tracked. Useful when you
+    have multiple clients, multiple budgets, or want explicit scope.
+
+    Supported client types: ``openai.OpenAI``, ``openai.AsyncOpenAI``,
+    ``anthropic.Anthropic``, ``anthropic.AsyncAnthropic``.
+
+    Usage::
+
+        budget = AgentBudget(max_spend="$5.00")
+        with budget.session() as session:
+            client = agentbudget.wrap_client(openai.OpenAI(), session)
+            response = client.chat.completions.create(...)   # tracked
+            other = openai.OpenAI()
+            other.chat.completions.create(...)               # NOT tracked
+
+    Returns the client with instance-level tracking attached (same object).
+    """
+    get_session = lambda: session  # noqa: E731
+
+    # Detect client type by class name to avoid hard imports
+    class_name = type(client).__name__
+
+    if class_name in ("OpenAI", "AsyncOpenAI"):
+        try:
+            completions = client.chat.completions
+            original_create = completions.__class__.create
+
+            if class_name == "AsyncOpenAI":
+                wrapped = _wrap_async_method(original_create, get_session)
+            else:
+                wrapped = _wrap_method(original_create, get_session)
+
+            # Bind the wrapped method to this instance's completions object
+            import types
+            completions.create = types.MethodType(wrapped, completions)  # type: ignore[assignment]
+        except AttributeError:
+            logger.warning("wrap_client: could not attach to OpenAI client")
+
+    elif class_name in ("Anthropic", "AsyncAnthropic"):
+        try:
+            messages = client.messages
+            original_create = messages.__class__.create
+
+            if class_name == "AsyncAnthropic":
+                wrapped = _wrap_async_method(original_create, get_session)
+            else:
+                wrapped = _wrap_method(original_create, get_session)
+
+            import types
+            messages.create = types.MethodType(wrapped, messages)  # type: ignore[assignment]
+        except AttributeError:
+            logger.warning("wrap_client: could not attach to Anthropic client")
+
+    else:
+        logger.warning(
+            "wrap_client: unrecognized client type %r — no tracking attached", class_name
+        )
+
+    return client
+
+
 def unpatch_all() -> None:
     """Restore all original methods."""
     for key, original in _originals.items():

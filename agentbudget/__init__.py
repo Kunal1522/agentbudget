@@ -18,6 +18,9 @@ from ._global import (
     track,
 )
 
+# Explicit per-client tracking
+from ._patch import wrap_client
+
 __all__ = [
     # Core classes
     "AgentBudget",
@@ -38,4 +41,6 @@ __all__ = [
     "remaining",
     "report",
     "track",
+    # Explicit per-client API
+    "wrap_client",
 ]

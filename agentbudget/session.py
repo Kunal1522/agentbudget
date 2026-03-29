@@ -63,6 +63,18 @@ class BudgetSession:
     def remaining(self) -> float:
         return self._ledger.remaining
 
+    def would_exceed(self, estimated_cost: float) -> bool:
+        """Check if a cost would exceed the remaining budget without recording it.
+
+        Use this before a final LLM call to avoid hard-limit termination mid-task:
+
+            if not session.would_exceed(estimated_cost):
+                response = session.wrap(client.chat.completions.create(...))
+            else:
+                return "Budget nearly exhausted — here is what was completed so far: ..."
+        """
+        return self._ledger.would_exceed(estimated_cost)
+
     def __enter__(self) -> "BudgetSession":
         self._start_time = time.time()
         return self
