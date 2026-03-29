@@ -89,6 +89,11 @@ def register_model(
 
         agentbudget.register_model("gpt-5", input_price_per_million=5.00, output_price_per_million=15.00)
     """
+    if input_price_per_million < 0 or output_price_per_million < 0:
+        raise ValueError(
+            f"Prices must be non-negative, got input={input_price_per_million}, "
+            f"output={output_price_per_million}"
+        )
     _custom_pricing[model] = (
         input_price_per_million / 1_000_000,
         output_price_per_million / 1_000_000,
