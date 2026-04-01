@@ -38,6 +38,11 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
+# Node / TypeScript SDK
+node_modules/
+sdks/typescript/dist/
+sdks/typescript/.turbo/
+
 # Private planning docs — never commit
 PLAN.md
 _private/
