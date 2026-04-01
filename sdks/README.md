@@ -11,7 +11,7 @@ The Python SDK lives in `/agentbudget/` at the repo root and is published to PyP
 | Language | Location | Install | Status |
 |---|---|---|---|
 | **Python** | `/agentbudget/` | `pip install agentbudget` | stable — v0.3.0 |
-| **Go** | `/sdks/go/` | `go get github.com/AgentBudget/agentbudget/sdks/go` | stable — v0.3.0 |
+| **Go** | `/sdks/go/` | `go get agentbudget.dev/go` | stable — v0.3.0 |
 | **TypeScript** | `/sdks/typescript/` | `npm install agentbudget` | stable — v0.3.0 |
 
 ---

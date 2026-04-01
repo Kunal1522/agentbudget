@@ -1,3 +1,3 @@
-module github.com/AgentBudget/agentbudget/sdks/go
+module agentbudget.dev/go
 
 go 1.21

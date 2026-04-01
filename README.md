@@ -99,7 +99,7 @@ Python 3.9+. For LangChain integration: `pip install agentbudget[langchain]`
 
 **Go**
 ```bash
-go get github.com/AgentBudget/agentbudget/sdks/go
+go get agentbudget.dev/go
 ```
 Go 1.21+. No external dependencies. Imported directly from GitHub — no registry needed.
 

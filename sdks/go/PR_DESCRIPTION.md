@@ -6,7 +6,7 @@ Adds `/sdks/go/` — a first-party Go SDK that replicates the full AgentBudget c
 
 **Install (after merge + tag):**
 ```bash
-go get github.com/AgentBudget/agentbudget/sdks/go
+go get agentbudget.dev/go
 ```
 
 Go 1.21+. Zero external dependencies.

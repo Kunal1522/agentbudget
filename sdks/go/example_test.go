@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	agentbudget "github.com/AgentBudget/agentbudget/sdks/go"
+	agentbudget "agentbudget.dev/go"
 )
 
 func Example_basicSession() {
