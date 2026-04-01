@@ -91,7 +91,7 @@ export function NpmDownloads() {
 
   return (
     <a
-      href="https://www.npmjs.com/package/agentbudget"
+      href="https://www.npmjs.com/package/@agentbudget/agentbudget"
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1.5 border border-border bg-surface px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border-bright hover:text-foreground hover:no-underline"

@@ -4,7 +4,7 @@ export async function GET() {
   try {
     // npm public downloads API — last 30 days, no auth required
     const res = await fetch(
-      "https://api.npmjs.org/downloads/point/last-month/agentbudget",
+      "https://api.npmjs.org/downloads/point/last-month/@agentbudget%2fagentbudget",
       {
         cache: "no-store",
         headers: { "User-Agent": "agentbudget-website/1.0" },

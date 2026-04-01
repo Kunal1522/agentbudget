@@ -7,7 +7,7 @@ import { useState } from "react";
 const INSTALL_COMMANDS = [
   { lang: "Python", cmd: "pip install agentbudget" },
   { lang: "Go", cmd: "go get agentbudget.dev/go" },
-  { lang: "TypeScript", cmd: "npm install agentbudget" },
+  { lang: "TypeScript", cmd: "npm install @agentbudget/agentbudget" },
 ] as const;
 
 type Lang = (typeof INSTALL_COMMANDS)[number]["lang"];
@@ -125,7 +125,7 @@ export function Hero() {
                 ? "agentbudget"
                 : activeLang === "Go"
                 ? "agentbudget.dev/go"
-                : "agentbudget"}
+                : "@agentbudget/agentbudget"}
             </span>
             <span className="ml-2 text-muted transition-colors hover:text-muted-foreground">
               {copied ? (
