@@ -13,15 +13,15 @@ export function StarHistory() {
         </p>
 
         <div className="flex justify-center">
-          <a href="https://www.star-history.com/#sahiljagtap08/agentbudget&type=date&legend=top-left">
+          <a href="https://www.star-history.com/#AgentBudget/agentbudget&type=date&legend=top-left">
             <picture>
               <source
                 media="(prefers-color-scheme: light)"
-                srcSet="https://api.star-history.com/svg?repos=sahiljagtap08/agentbudget&type=date&theme=dark&legend=top-left"
+                srcSet="https://api.star-history.com/svg?repos=AgentBudget/agentbudget&type=date&theme=dark&legend=top-left"
               />
               <img
                 alt="Star History Chart"
-                src="https://api.star-history.com/svg?repos=sahiljagtap08/agentbudget&type=date&theme=dark&legend=top-left"
+                src="https://api.star-history.com/svg?repos=AgentBudget/agentbudget&type=date&theme=dark&legend=top-left"
                 className="w-full max-w-[700px]"
               />
             </picture>

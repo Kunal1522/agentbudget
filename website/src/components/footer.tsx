@@ -7,7 +7,7 @@ const columns = [
       { label: "Documentation", href: "/docs" },
       { label: "PyPI Package", href: "https://pypi.org/project/agentbudget/" },
       { label: "PyPI Stats", href: "https://pypistats.org/packages/agentbudget" },
-      { label: "Changelog", href: "https://github.com/sahiljagtap08/agentbudget/releases" },
+      { label: "Changelog", href: "https://github.com/AgentBudget/agentbudget/releases" },
     ],
   },
   {
@@ -23,8 +23,8 @@ const columns = [
   {
     title: "Community",
     links: [
-      { label: "GitHub", href: "https://github.com/sahiljagtap08/agentbudget" },
-      { label: "Issues", href: "https://github.com/sahiljagtap08/agentbudget/issues" },
+      { label: "GitHub", href: "https://github.com/AgentBudget/agentbudget" },
+      { label: "Issues", href: "https://github.com/AgentBudget/agentbudget/issues" },
     ],
   },
 ];
@@ -46,7 +46,7 @@ export function Footer() {
             </p>
             <div className="mt-4 flex gap-3">
               <Link
-                href="https://github.com/sahiljagtap08/agentbudget"
+                href="https://github.com/AgentBudget/agentbudget"
                 className="text-muted transition-colors hover:text-muted-foreground"
                 aria-label="GitHub"
               >
@@ -82,7 +82,7 @@ export function Footer() {
         <div className="mt-12 border-t border-border pt-6">
           <p className="text-[12px] text-muted">
             &copy; {new Date().getFullYear()} AgentBudget &middot; Apache 2.0 &middot; Built by{" "}
-            <Link href="https://github.com/sahiljagtap08" className="text-muted-foreground hover:text-foreground">
+            <Link href="https://github.com/AgentBudget" className="text-muted-foreground hover:text-foreground">
               Sahil Jagtap
             </Link>
           </p>

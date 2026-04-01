@@ -6,7 +6,7 @@ export function GitHubStars() {
   const [stars, setStars] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("https://api.github.com/repos/sahiljagtap08/agentbudget")
+    fetch("https://api.github.com/repos/AgentBudget/agentbudget")
       .then((res) => res.json())
       .then((data) => {
         if (typeof data.stargazers_count === "number") {
@@ -18,7 +18,7 @@ export function GitHubStars() {
 
   return (
     <a
-      href="https://github.com/sahiljagtap08/agentbudget"
+      href="https://github.com/AgentBudget/agentbudget"
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1.5 border border-border bg-surface px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border-bright hover:text-foreground hover:no-underline"

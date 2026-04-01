@@ -33,7 +33,7 @@ export function Nav() {
           </Link>
           <GitHubStars />
           <Link
-            href="https://github.com/sahiljagtap08/agentbudget"
+            href="https://github.com/AgentBudget/agentbudget"
             className="inline-flex items-center gap-1.5 bg-gradient-accent px-3.5 py-1.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 hover:no-underline"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -65,7 +65,7 @@ export function Nav() {
             <Link href="/docs" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Docs</Link>
             <Link href="https://pypi.org/project/agentbudget/" className="text-sm text-muted-foreground hover:text-foreground">PyPI</Link>
             <Link href="/whitepaper" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Whitepaper</Link>
-            <Link href="https://github.com/sahiljagtap08/agentbudget" className="text-sm text-muted-foreground hover:text-foreground">GitHub</Link>
+            <Link href="https://github.com/AgentBudget/agentbudget" className="text-sm text-muted-foreground hover:text-foreground">GitHub</Link>
           </div>
         </div>
       )}

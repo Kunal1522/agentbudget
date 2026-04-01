@@ -29,9 +29,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://agentbudget.dev"
 Documentation = "https://agentbudget.dev/docs"
-Repository = "https://github.com/sahiljagtap08/agentbudget"
-Issues = "https://github.com/sahiljagtap08/agentbudget/issues"
-Changelog = "https://github.com/sahiljagtap08/agentbudget/releases"
+Repository = "https://github.com/AgentBudget/agentbudget"
+Issues = "https://github.com/AgentBudget/agentbudget/issues"
+Changelog = "https://github.com/AgentBudget/agentbudget/releases"
 
 [project.optional-dependencies]
 langchain = ["langchain-core>=0.1.0"]

@@ -83,7 +83,7 @@ const jsonLd = {
   programmingLanguage: "Python",
   softwareRequirements: "Python 3.9+",
   license: "https://opensource.org/licenses/Apache-2.0",
-  codeRepository: "https://github.com/sahiljagtap08/agentbudget",
+  codeRepository: "https://github.com/AgentBudget/agentbudget",
 };
 
 const faqJsonLd = {

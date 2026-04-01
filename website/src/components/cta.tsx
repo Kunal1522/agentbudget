@@ -12,7 +12,7 @@ export function CTA() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="https://github.com/sahiljagtap08/agentbudget"
+            href="https://github.com/AgentBudget/agentbudget"
             className="inline-flex items-center gap-2 bg-gradient-accent px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 hover:no-underline"
           >
             Get Started
