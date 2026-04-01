@@ -2,7 +2,7 @@
 
 Real-time cost enforcement for AI agent sessions — Go edition.
 
-[![Go Reference](https://pkg.go.dev/badge/agentbudget.dev/go.svg)](https://pkg.go.dev/agentbudget.dev/go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AgentBudget/agentbudget/sdks/go.svg)](https://pkg.go.dev/github.com/AgentBudget/agentbudget/sdks/go)
 [![License](https://img.shields.io/github/license/AgentBudget/agentbudget)](https://github.com/AgentBudget/agentbudget/blob/main/LICENSE)
 
 ---
@@ -10,7 +10,7 @@ Real-time cost enforcement for AI agent sessions — Go edition.
 ## Install
 
 ```bash
-go get agentbudget.dev/go
+go get github.com/AgentBudget/agentbudget/sdks/go
 ```
 
 Go 1.21+. Zero external dependencies.
@@ -20,7 +20,7 @@ Go 1.21+. Zero external dependencies.
 ## Quickstart
 
 ```go
-import agentbudget "agentbudget.dev/go"
+import agentbudget "github.com/AgentBudget/agentbudget/sdks/go"
 
 budget, err := agentbudget.New("$5.00")
 if err != nil {
@@ -60,7 +60,7 @@ import (
     "os"
 
     openai "github.com/sashabaranov/go-openai"
-    agentbudget "agentbudget.dev/go"
+    agentbudget "github.com/AgentBudget/agentbudget/sdks/go"
 )
 
 func main() {
@@ -107,7 +107,7 @@ func main() {
 ```go
 import (
     anthropic "github.com/anthropics/anthropic-sdk-go"
-    agentbudget "agentbudget.dev/go"
+    agentbudget "github.com/AgentBudget/agentbudget/sdks/go"
 )
 
 session := budget.NewSession()

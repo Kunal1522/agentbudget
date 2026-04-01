@@ -11,7 +11,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/AgentBudget/agentbudget/sdks/go.svg)](https://pkg.go.dev/github.com/AgentBudget/agentbudget/sdks/go)
 [![License](https://img.shields.io/github/license/AgentBudget/agentbudget)](https://github.com/AgentBudget/agentbudget/blob/main/LICENSE)
 
-[Website](https://agentbudget.dev) · [Docs](https://agentbudget.dev/docs) · [PyPI](https://pypi.org/project/agentbudget/) · [npm](https://www.npmjs.com/package/@agentbudget/agentbudget) · [Go](https://pkg.go.dev/agentbudget.dev/go) · [GitHub](https://github.com/AgentBudget/agentbudget)
+[Website](https://agentbudget.dev) · [Docs](https://agentbudget.dev/docs) · [PyPI](https://pypi.org/project/agentbudget/) · [npm](https://www.npmjs.com/package/@agentbudget/agentbudget) · [Go](https://pkg.go.dev/github.com/AgentBudget/agentbudget/sdks/go) · [GitHub](https://github.com/AgentBudget/agentbudget)
 
 ---
 
@@ -99,7 +99,7 @@ Python 3.9+. For LangChain integration: `pip install agentbudget[langchain]`
 
 **Go**
 ```bash
-go get agentbudget.dev/go
+go get github.com/AgentBudget/agentbudget/sdks/go
 ```
 Go 1.21+. No external dependencies. Imported directly from GitHub — no registry needed.
 
@@ -121,6 +121,7 @@ AgentBudget ships first-party SDKs for Python, Go, and TypeScript. All three sha
 import agentbudget "github.com/AgentBudget/agentbudget/sdks/go"
 
 budget, _ := agentbudget.New("$5.00")
+
 session := budget.NewSession()
 defer session.Close()
 
