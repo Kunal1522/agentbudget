@@ -4,11 +4,22 @@ import { GitHubStars, PyPIDownloads } from "@/components/github-stars";
 import Link from "next/link";
 import { useState } from "react";
 
+const INSTALL_COMMANDS = [
+  { lang: "Python", cmd: "pip install agentbudget" },
+  { lang: "Go", cmd: "go get github.com/AgentBudget/agentbudget/sdks/go" },
+  { lang: "TypeScript", cmd: "npm install agentbudget" },
+] as const;
+
+type Lang = (typeof INSTALL_COMMANDS)[number]["lang"];
+
 export function Hero() {
+  const [activeLang, setActiveLang] = useState<Lang>("Python");
   const [copied, setCopied] = useState(false);
 
+  const activeCmd = INSTALL_COMMANDS.find((c) => c.lang === activeLang)!.cmd;
+
   const handleCopy = () => {
-    navigator.clipboard.writeText("pip install agentbudget");
+    navigator.clipboard.writeText(activeCmd);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -23,7 +34,7 @@ export function Hero() {
               className="h-1.5 w-1.5 rounded-full bg-accent"
               style={{ animation: "pulse-dot 2s ease-in-out infinite" }}
             />
-            OPEN SOURCE &middot; PYTHON SDK
+            OPEN SOURCE &middot; PYTHON &middot; GO &middot; TYPESCRIPT
           </div>
           <GitHubStars />
           <PyPIDownloads />
@@ -50,7 +61,7 @@ export function Hero() {
         {/* CTAs */}
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="https://github.com/sahiljagtap08/agentbudget"
+            href="https://github.com/AgentBudget/agentbudget"
             className="inline-flex items-center gap-2 bg-gradient-accent px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 hover:no-underline"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -80,27 +91,54 @@ export function Hero() {
           </Link>
         </div>
 
-        {/* Install command with copy */}
-        <button
-          onClick={handleCopy}
-          className="mt-8 inline-flex cursor-pointer items-center gap-3 border border-border bg-code-bg px-4 py-2.5 font-mono text-[13px] transition-colors hover:border-border-bright"
-        >
-          <span className="text-muted">$</span>
-          <span className="text-accent-bright">pip install</span>
-          <span className="text-muted-foreground">agentbudget</span>
-          <span className="ml-2 text-muted transition-colors hover:text-muted-foreground">
-            {copied ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" />
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-              </svg>
-            )}
-          </span>
-        </button>
+        {/* Install command with language tab switcher */}
+        <div className="mt-8 inline-flex flex-col">
+          {/* Tab row */}
+          <div className="flex border border-b-0 border-border">
+            {INSTALL_COMMANDS.map(({ lang }) => (
+              <button
+                key={lang}
+                onClick={() => setActiveLang(lang)}
+                className={`px-4 py-1.5 font-mono text-[11px] transition-colors ${
+                  activeLang === lang
+                    ? "bg-code-bg text-accent-bright"
+                    : "bg-transparent text-muted hover:text-muted-foreground"
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
+          {/* Command row */}
+          <button
+            onClick={handleCopy}
+            className="inline-flex cursor-pointer items-center gap-3 border border-border bg-code-bg px-4 py-2.5 font-mono text-[13px] transition-colors hover:border-border-bright"
+          >
+            <span className="text-muted">$</span>
+            <span className="text-accent-bright">
+              {activeLang === "Python" ? "pip install" : activeLang === "Go" ? "go get" : "npm install"}
+            </span>
+            <span className="text-muted-foreground">
+              {activeLang === "Python"
+                ? "agentbudget"
+                : activeLang === "Go"
+                ? "github.com/AgentBudget/agentbudget/sdks/go"
+                : "agentbudget"}
+            </span>
+            <span className="ml-2 text-muted transition-colors hover:text-muted-foreground">
+              {copied ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                </svg>
+              )}
+            </span>
+          </button>
+        </div>
       </div>
     </section>
   );
