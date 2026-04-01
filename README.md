@@ -4,10 +4,12 @@
 
 [![PyPI](https://img.shields.io/pypi/v/agentbudget)](https://pypi.org/project/agentbudget/)
 [![Python](https://img.shields.io/pypi/pyversions/agentbudget)](https://pypi.org/project/agentbudget/)
+[![npm](https://img.shields.io/npm/v/agentbudget)](https://www.npmjs.com/package/agentbudget)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AgentBudget/agentbudget/sdks/go.svg)](https://pkg.go.dev/github.com/AgentBudget/agentbudget/sdks/go)
 [![Downloads](https://static.pepy.tech/personalized-badge/agentbudget?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/agentbudget)
-[![License](https://img.shields.io/github/license/sahiljagtap08/agentbudget)](https://github.com/sahiljagtap08/agentbudget/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/AgentBudget/agentbudget)](https://github.com/AgentBudget/agentbudget/blob/main/LICENSE)
 
-[Website](https://agentbudget.dev) · [Docs](https://agentbudget.dev/docs) · [PyPI](https://pypi.org/project/agentbudget/)
+[Website](https://agentbudget.dev) · [Docs](https://agentbudget.dev/docs) · [PyPI](https://pypi.org/project/agentbudget/) · [npm](https://www.npmjs.com/package/agentbudget) · [Go](https://pkg.go.dev/github.com/AgentBudget/agentbudget/sdks/go)
 
 ---
 
@@ -87,16 +89,68 @@ print(session.report())
 
 ## Install
 
+**Python**
 ```bash
 pip install agentbudget
 ```
+Python 3.9+. For LangChain integration: `pip install agentbudget[langchain]`
 
-Python 3.9+. No external dependencies.
-
-For LangChain integration:
+**Go**
 ```bash
-pip install agentbudget[langchain]
+go get github.com/AgentBudget/agentbudget/sdks/go
 ```
+Go 1.21+. No external dependencies. Imported directly from GitHub — no registry needed.
+
+**TypeScript / JavaScript**
+```bash
+npm install agentbudget
+```
+Node.js 18+. Works with `openai` ≥ 4.0 and `@anthropic-ai/sdk` ≥ 0.20 (both optional peer deps).
+
+---
+
+## Multi-Language SDK
+
+AgentBudget ships first-party SDKs for Python, Go, and TypeScript. All three share the same session/budget pattern and built-in pricing table.
+
+### Go
+
+```go
+import agentbudget "github.com/AgentBudget/agentbudget/sdks/go"
+
+budget, _ := agentbudget.New("$5.00")
+session := budget.NewSession()
+defer session.Close()
+
+// After your OpenAI or Anthropic call, record token usage:
+if err := session.WrapUsage("gpt-4o", inputTokens, outputTokens); err != nil {
+    // *agentbudget.BudgetExhausted or *agentbudget.LoopDetected
+}
+
+fmt.Printf("spent: $%.4f  remaining: $%.4f\n", session.Spent(), session.Remaining())
+```
+
+See [`/sdks/go/README.md`](./sdks/go/README.md) for full docs.
+
+### TypeScript
+
+```ts
+import { AgentBudget } from "agentbudget";
+import OpenAI from "openai";
+
+const budget = new AgentBudget("$5.00");
+const session = budget.newSession();
+
+const resp = await new OpenAI().chat.completions.create({ model: "gpt-4o", messages });
+session.wrapOpenAI(resp);
+
+console.log(`spent: $${session.spent.toFixed(4)}`);
+session.close();
+```
+
+See [`/sdks/typescript/README.md`](./sdks/typescript/README.md) for full docs.
+
+> See [`/sdks/README.md`](./sdks/README.md) for the full feature parity matrix and monorepo structure.
 
 ---
 
