@@ -6,7 +6,7 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function highlightCode(code: string, lang: "python" | "json" | "bash"): string {
+function highlightCode(code: string, lang: "python" | "json" | "bash" | "go" | "typescript"): string {
   if (lang === "bash") {
     return code
       .split("\n")
@@ -108,10 +108,10 @@ function highlightCode(code: string, lang: "python" | "json" | "bash"): string {
 
 interface CodeBlockProps {
   children: string;
-  lang?: "python" | "json" | "bash";
+  lang?: "python" | "json" | "bash" | "go" | "typescript";
 }
 
-export function CodeBlock({ children, lang = "python" }: CodeBlockProps) {
+export function CodeBlock({ children, lang = "python" as const }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
