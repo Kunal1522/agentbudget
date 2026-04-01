@@ -104,9 +104,35 @@ export function NpmDownloads() {
   );
 }
 
+export function GoClones() {
+  const [clones, setClones] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/go-stats")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d?.clones === "number") setClones(d.clones); })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <a
+      href="https://pkg.go.dev/github.com/AgentBudget/agentbudget/sdks/go"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 border border-border bg-surface px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border-bright hover:text-foreground hover:no-underline"
+    >
+      <DownloadIcon />
+      <span className="font-mono text-[10px] text-muted">go</span>
+      <span className="font-mono">{clones !== null ? fmt(clones) : "--"}</span>
+      <span className="text-muted">clones</span>
+    </a>
+  );
+}
+
 export function TotalInstalls() {
   const [pypi, setPypi] = useState<number | null>(null);
   const [npm, setNpm] = useState<number | null>(null);
+  const [go, setGo] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/pypi-stats")
@@ -117,10 +143,14 @@ export function TotalInstalls() {
       .then((r) => r.json())
       .then((d) => { if (typeof d?.downloads === "number") setNpm(d.downloads); })
       .catch(() => {});
+    fetch("/api/go-stats")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d?.clones === "number") setGo(d.clones); })
+      .catch(() => {});
   }, []);
 
-  const total = pypi !== null || npm !== null
-    ? (pypi ?? 0) + (npm ?? 0)
+  const total = pypi !== null || npm !== null || go !== null
+    ? (pypi ?? 0) + (npm ?? 0) + (go ?? 0)
     : null;
 
   return (
