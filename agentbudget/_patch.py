@@ -9,22 +9,23 @@ When the patched method returns a streaming response (``openai.Stream`` or
 ``anthropic.Stream``), the return value is replaced with a wrapper object that:
 
 1. Yields every chunk/event unchanged to the caller.
-2. After the caller exhausts the iterator, records the accumulated cost to
-   the active session.
+2. When iteration ends or the iterator is closed, records any accumulated cost
+   to the active session.
 3. Supports both the for-loop and context-manager usage patterns.
 
-For OpenAI this relies on the caller setting
-``stream_options={"include_usage": True}`` so that token usage appears on the
-final chunk.  If no usage chunk is present, cost tracking is silently skipped
-(no error, no partial cost).
+For OpenAI, the patch auto-injects
+``stream_options={"include_usage": True}`` for streaming calls unless the
+caller already set ``include_usage`` explicitly. OpenAI usage still arrives on
+the final chunk, so tracking remains incomplete if that chunk is never
+received.
 
 For Anthropic, token counts are collected from the ``message_start`` event
 (input tokens) and the ``message_delta`` event (output tokens).
 
-Note: if the stream raises an exception before the usage chunk is received,
-or if the consumer breaks out early, cost cannot be determined and is not
-recorded.  This is a protocol limitation — the usage data is only available
-at the end of the stream.
+Note: ``finally`` blocks let the wrappers record any usage already observed
+before a consumer breaks out of the loop. They cannot recover usage the
+provider never sent. If a stream ends without enough usage data to price it,
+the patch logs a warning so the under-count is visible.
 """
 
 from __future__ import annotations
@@ -32,12 +33,39 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+from collections.abc import Mapping
 from typing import Any, Callable, Iterator, AsyncIterator, Optional
 
 logger = logging.getLogger("agentbudget.patch")
 
 # Store original methods so we can unpatch cleanly
 _originals: dict[str, Any] = {}
+
+
+def _maybe_inject_openai_stream_options(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Ensure OpenAI streaming requests ask the API to include usage data.
+
+    OpenAI exposes streaming usage on a final chunk when
+    ``stream_options={"include_usage": True}`` is enabled. Injecting the flag
+    here avoids a common footgun where tracking silently under-counts because
+    the caller forgot that option.
+    """
+    if kwargs.get("stream") is not True:
+        return kwargs
+
+    stream_options = kwargs.get("stream_options")
+    if stream_options is None:
+        updated = dict(kwargs)
+        updated["stream_options"] = {"include_usage": True}
+        return updated
+
+    if isinstance(stream_options, Mapping) and "include_usage" not in stream_options:
+        updated = dict(kwargs)
+        updated["stream_options"] = dict(stream_options)
+        updated["stream_options"]["include_usage"] = True
+        return updated
+
+    return kwargs
 
 
 # ---------------------------------------------------------------------------
@@ -95,10 +123,10 @@ class _OpenAIStreamWrapper:
             for chunk in stream:
                 ...
 
-    Cost is recorded after the consumer exhausts the iterator.  Requires the
-    caller to set ``stream_options={"include_usage": True}`` so that OpenAI
-    includes token counts on the final chunk.  Without it, cost tracking is
-    silently skipped (no error, no partial cost).
+    Cost is finalized in a ``finally`` block so breaking out of the loop still
+    records usage that was already seen. OpenAI usage still arrives on the
+    final chunk, so if that chunk never shows up the wrapper can only warn
+    that tracking was incomplete.
     """
 
     def __init__(self, stream: Any, get_session: Callable) -> None:
@@ -110,20 +138,21 @@ class _OpenAIStreamWrapper:
         prompt_tokens: Optional[int] = None
         completion_tokens: Optional[int] = None
 
-        for chunk in self._stream:
-            if model is None:
-                model = getattr(chunk, "model", None)
-            usage = getattr(chunk, "usage", None)
-            if usage is not None:
-                pt = getattr(usage, "prompt_tokens", None)
-                ct = getattr(usage, "completion_tokens", None)
-                if pt is not None:
-                    prompt_tokens = pt
-                if ct is not None:
-                    completion_tokens = ct
-            yield chunk
-
-        self._record_cost(model, prompt_tokens, completion_tokens)
+        try:
+            for chunk in self._stream:
+                if model is None:
+                    model = getattr(chunk, "model", None)
+                usage = getattr(chunk, "usage", None)
+                if usage is not None:
+                    pt = getattr(usage, "prompt_tokens", None)
+                    ct = getattr(usage, "completion_tokens", None)
+                    if pt is not None:
+                        prompt_tokens = pt
+                    if ct is not None:
+                        completion_tokens = ct
+                yield chunk
+        finally:
+            self._record_cost(model, prompt_tokens, completion_tokens)
 
     def _record_cost(
         self,
@@ -132,17 +161,21 @@ class _OpenAIStreamWrapper:
         completion_tokens: Optional[int],
     ) -> None:
         session = self._get_session()
-        if (
-            session is not None
-            and model
-            and prompt_tokens is not None
-            and completion_tokens is not None
-        ):
+        if session is None:
+            return
+
+        if model and prompt_tokens is not None and completion_tokens is not None:
             try:
                 session.wrap(_FakeLLMResult(model, prompt_tokens, completion_tokens))
             except Exception:
                 logger.debug("Failed to track OpenAI streaming cost", exc_info=True)
                 raise
+            return
+
+        if model is not None or prompt_tokens is not None or completion_tokens is not None:
+            logger.warning(
+                "OpenAI streaming call ended without complete usage data; cost was not tracked."
+            )
 
     def __enter__(self) -> "_OpenAIStreamWrapper":
         return self
@@ -183,31 +216,44 @@ class _AsyncOpenAIStreamWrapper:
         prompt_tokens: Optional[int] = None
         completion_tokens: Optional[int] = None
 
-        async for chunk in self._stream:
-            if model is None:
-                model = getattr(chunk, "model", None)
-            usage = getattr(chunk, "usage", None)
-            if usage is not None:
-                pt = getattr(usage, "prompt_tokens", None)
-                ct = getattr(usage, "completion_tokens", None)
-                if pt is not None:
-                    prompt_tokens = pt
-                if ct is not None:
-                    completion_tokens = ct
-            yield chunk
+        try:
+            async for chunk in self._stream:
+                if model is None:
+                    model = getattr(chunk, "model", None)
+                usage = getattr(chunk, "usage", None)
+                if usage is not None:
+                    pt = getattr(usage, "prompt_tokens", None)
+                    ct = getattr(usage, "completion_tokens", None)
+                    if pt is not None:
+                        prompt_tokens = pt
+                    if ct is not None:
+                        completion_tokens = ct
+                yield chunk
+        finally:
+            self._record_cost(model, prompt_tokens, completion_tokens)
 
+    def _record_cost(
+        self,
+        model: Optional[str],
+        prompt_tokens: Optional[int],
+        completion_tokens: Optional[int],
+    ) -> None:
         session = self._get_session()
-        if (
-            session is not None
-            and model
-            and prompt_tokens is not None
-            and completion_tokens is not None
-        ):
+        if session is None:
+            return
+
+        if model and prompt_tokens is not None and completion_tokens is not None:
             try:
                 session.wrap(_FakeLLMResult(model, prompt_tokens, completion_tokens))
             except Exception:
                 logger.debug("Failed to track OpenAI async streaming cost", exc_info=True)
                 raise
+            return
+
+        if model is not None or prompt_tokens is not None or completion_tokens is not None:
+            logger.warning(
+                "OpenAI streaming call ended without complete usage data; cost was not tracked."
+            )
 
     def __aiter__(self) -> Any:  # type: ignore[misc]
         return self._iterate().__aiter__()
@@ -250,27 +296,28 @@ class _AnthropicStreamWrapper:
         input_tokens: Optional[int] = None
         output_tokens: Optional[int] = None
 
-        for event in self._stream:
-            event_type = getattr(event, "type", None)
-            if event_type == "message_start":
-                msg = getattr(event, "message", None)
-                if msg is not None:
-                    if model is None:
-                        model = getattr(msg, "model", None)
-                    usage = getattr(msg, "usage", None)
+        try:
+            for event in self._stream:
+                event_type = getattr(event, "type", None)
+                if event_type == "message_start":
+                    msg = getattr(event, "message", None)
+                    if msg is not None:
+                        if model is None:
+                            model = getattr(msg, "model", None)
+                        usage = getattr(msg, "usage", None)
+                        if usage is not None:
+                            it = getattr(usage, "input_tokens", None)
+                            if it is not None:
+                                input_tokens = it
+                elif event_type == "message_delta":
+                    usage = getattr(event, "usage", None)
                     if usage is not None:
-                        it = getattr(usage, "input_tokens", None)
-                        if it is not None:
-                            input_tokens = it
-            elif event_type == "message_delta":
-                usage = getattr(event, "usage", None)
-                if usage is not None:
-                    ot = getattr(usage, "output_tokens", None)
-                    if ot is not None:
-                        output_tokens = ot
-            yield event
-
-        self._record_cost(model, input_tokens, output_tokens)
+                        ot = getattr(usage, "output_tokens", None)
+                        if ot is not None:
+                            output_tokens = ot
+                yield event
+        finally:
+            self._record_cost(model, input_tokens, output_tokens)
 
     def _record_cost(
         self,
@@ -279,17 +326,21 @@ class _AnthropicStreamWrapper:
         output_tokens: Optional[int],
     ) -> None:
         session = self._get_session()
-        if (
-            session is not None
-            and model
-            and input_tokens is not None
-            and output_tokens is not None
-        ):
+        if session is None:
+            return
+
+        if model and input_tokens is not None and output_tokens is not None:
             try:
                 session.wrap(_FakeAnthropicResult(model, input_tokens, output_tokens))
             except Exception:
                 logger.debug("Failed to track Anthropic streaming cost", exc_info=True)
                 raise
+            return
+
+        if model is not None or input_tokens is not None or output_tokens is not None:
+            logger.warning(
+                "Anthropic streaming call ended without complete usage data; cost was not tracked."
+            )
 
     def __enter__(self) -> "_AnthropicStreamWrapper":
         return self
@@ -319,38 +370,51 @@ class _AsyncAnthropicStreamWrapper:
         input_tokens: Optional[int] = None
         output_tokens: Optional[int] = None
 
-        async for event in self._stream:
-            event_type = getattr(event, "type", None)
-            if event_type == "message_start":
-                msg = getattr(event, "message", None)
-                if msg is not None:
-                    if model is None:
-                        model = getattr(msg, "model", None)
-                    usage = getattr(msg, "usage", None)
+        try:
+            async for event in self._stream:
+                event_type = getattr(event, "type", None)
+                if event_type == "message_start":
+                    msg = getattr(event, "message", None)
+                    if msg is not None:
+                        if model is None:
+                            model = getattr(msg, "model", None)
+                        usage = getattr(msg, "usage", None)
+                        if usage is not None:
+                            it = getattr(usage, "input_tokens", None)
+                            if it is not None:
+                                input_tokens = it
+                elif event_type == "message_delta":
+                    usage = getattr(event, "usage", None)
                     if usage is not None:
-                        it = getattr(usage, "input_tokens", None)
-                        if it is not None:
-                            input_tokens = it
-            elif event_type == "message_delta":
-                usage = getattr(event, "usage", None)
-                if usage is not None:
-                    ot = getattr(usage, "output_tokens", None)
-                    if ot is not None:
-                        output_tokens = ot
-            yield event
+                        ot = getattr(usage, "output_tokens", None)
+                        if ot is not None:
+                            output_tokens = ot
+                yield event
+        finally:
+            self._record_cost(model, input_tokens, output_tokens)
 
+    def _record_cost(
+        self,
+        model: Optional[str],
+        input_tokens: Optional[int],
+        output_tokens: Optional[int],
+    ) -> None:
         session = self._get_session()
-        if (
-            session is not None
-            and model
-            and input_tokens is not None
-            and output_tokens is not None
-        ):
+        if session is None:
+            return
+
+        if model and input_tokens is not None and output_tokens is not None:
             try:
                 session.wrap(_FakeAnthropicResult(model, input_tokens, output_tokens))
             except Exception:
                 logger.debug("Failed to track Anthropic async streaming cost", exc_info=True)
                 raise
+            return
+
+        if model is not None or input_tokens is not None or output_tokens is not None:
+            logger.warning(
+                "Anthropic streaming call ended without complete usage data; cost was not tracked."
+            )
 
     def __aiter__(self) -> Any:
         return self._iterate().__aiter__()
@@ -395,11 +459,17 @@ def _wrap_anthropic_async_stream(stream: Any, get_session: Callable) -> "_AsyncA
 # Sync/async method wrappers (patched onto SDK classes)
 # ---------------------------------------------------------------------------
 
-def _wrap_method(original: Callable, get_session: Callable) -> Callable:
+def _wrap_method(
+    original: Callable,
+    get_session: Callable,
+    provider: Optional[str] = None,
+) -> Callable:
     """Wrap a sync SDK method to auto-track costs (streaming and non-streaming)."""
 
     @functools.wraps(original)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if provider == "openai":
+            kwargs = _maybe_inject_openai_stream_options(kwargs)
         response = original(*args, **kwargs)
         session = get_session()
         if session is None:
@@ -433,11 +503,17 @@ def _wrap_method(original: Callable, get_session: Callable) -> Callable:
     return wrapper
 
 
-def _wrap_async_method(original: Callable, get_session: Callable) -> Callable:
+def _wrap_async_method(
+    original: Callable,
+    get_session: Callable,
+    provider: Optional[str] = None,
+) -> Callable:
     """Wrap an async SDK method to auto-track costs (streaming and non-streaming)."""
 
     @functools.wraps(original)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if provider == "openai":
+            kwargs = _maybe_inject_openai_stream_options(kwargs)
         response = await original(*args, **kwargs)
         session = get_session()
         if session is None:
@@ -490,12 +566,12 @@ def patch_openai(get_session: Callable) -> bool:
         return True  # already patched
 
     _originals["openai.chat.completions.create"] = Completions.create
-    Completions.create = _wrap_method(Completions.create, get_session)  # type: ignore[assignment]
+    Completions.create = _wrap_method(Completions.create, get_session, provider="openai")  # type: ignore[assignment]
 
     # Patch async if available
     if hasattr(Completions, "acreate"):
         _originals["openai.chat.completions.acreate"] = Completions.acreate
-        Completions.acreate = _wrap_async_method(Completions.acreate, get_session)  # type: ignore[assignment]
+        Completions.acreate = _wrap_async_method(Completions.acreate, get_session, provider="openai")  # type: ignore[assignment]
 
     # Also patch the async completions class if it exists
     try:
@@ -503,7 +579,7 @@ def patch_openai(get_session: Callable) -> bool:
 
         if not getattr(getattr(AsyncCompletions, "create", None), "_agentbudget_patched", False):
             _originals["openai.async_chat.completions.create"] = AsyncCompletions.create
-            AsyncCompletions.create = _wrap_async_method(AsyncCompletions.create, get_session)  # type: ignore[assignment]
+            AsyncCompletions.create = _wrap_async_method(AsyncCompletions.create, get_session, provider="openai")  # type: ignore[assignment]
     except ImportError:
         pass
 
@@ -526,7 +602,7 @@ def patch_anthropic(get_session: Callable) -> bool:
         return True  # already patched
 
     _originals["anthropic.messages.create"] = Messages.create
-    Messages.create = _wrap_method(Messages.create, get_session)  # type: ignore[assignment]
+    Messages.create = _wrap_method(Messages.create, get_session, provider="anthropic")  # type: ignore[assignment]
 
     # Patch async messages
     try:
@@ -534,7 +610,7 @@ def patch_anthropic(get_session: Callable) -> bool:
 
         if not getattr(getattr(AsyncMessages, "create", None), "_agentbudget_patched", False):
             _originals["anthropic.async_messages.create"] = AsyncMessages.create
-            AsyncMessages.create = _wrap_async_method(AsyncMessages.create, get_session)  # type: ignore[assignment]
+            AsyncMessages.create = _wrap_async_method(AsyncMessages.create, get_session, provider="anthropic")  # type: ignore[assignment]
     except ImportError:
         pass
 
@@ -574,9 +650,9 @@ def wrap_client(client: Any, session: Any) -> Any:
             original_create = completions.__class__.create
 
             if class_name == "AsyncOpenAI":
-                wrapped = _wrap_async_method(original_create, get_session)
+                wrapped = _wrap_async_method(original_create, get_session, provider="openai")
             else:
-                wrapped = _wrap_method(original_create, get_session)
+                wrapped = _wrap_method(original_create, get_session, provider="openai")
 
             # Bind the wrapped method to this instance's completions object
             import types
@@ -590,9 +666,9 @@ def wrap_client(client: Any, session: Any) -> Any:
             original_create = messages.__class__.create
 
             if class_name == "AsyncAnthropic":
-                wrapped = _wrap_async_method(original_create, get_session)
+                wrapped = _wrap_async_method(original_create, get_session, provider="anthropic")
             else:
-                wrapped = _wrap_method(original_create, get_session)
+                wrapped = _wrap_method(original_create, get_session, provider="anthropic")
 
             import types
             messages.create = types.MethodType(wrapped, messages)  # type: ignore[assignment]
